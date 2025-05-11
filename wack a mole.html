@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Whack-a-Mole Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f8ff;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+
+    #scoreboard {
+      margin: 10px;
+      font-size: 18px;
+    }
+
+    .game-board {
+      display: grid;
+      gap: 5px;
+      justify-content: center;
+      margin: 20px auto;
+      grid-template-columns: repeat(5, 60px); /* 5 kolom */
+      grid-template-rows: repeat(6, 60px); /* 6 baris */
+    }
+
+    .hole {
+      background: #ccc;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .mole {
+      background: url('https://i.imgur.com/OdL0XPt.png') center/contain no-repeat;
+      position: absolute;
+      bottom: -100%;
+      transition: bottom 0.2s;
+    }
+
+    .up .mole {
+      bottom: 0;
+    }
+
+    button, select {
+      padding: 8px 16px;
+      font-size: 14px;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Whack-a-Mole Game</h1>
+
+  <div id="scoreboard">
+    Score: <span id="score">0</span> |
+    High Score: <span id="highScore">0</span> |
+    Time: <span id="time">30</span>s
+  </div>
+
+  <label for="level">Level:</label>
+  <select id="level">
+    <option value="1000">Easy</option>
+    <option value="500">Normal</option>
+    <option value="300">Hard</option>
+  </select>
+
+  <button onclick="startGame()">Start Game</button>
+  <button onclick="resetGame()">Reset</button>
+
+  <div class="game-board" id="board"></div>
+
+  <audio id="hitSound" src="https://www.fesliyanstudios.com/play-mp3/387"></audio>
+
+  <script>
+    const board = document.getElementById('board');
+    const scoreEl = document.getElementById('score');
+    const timeEl = document.getElementById('time');
+    const highScoreEl = document.getElementById('highScore');
+    const levelSelect = document.getElementById('level');
+    const hitSound = document.getElementById('hitSound');
+
+    let score = 0;
+    let highScore = 0;
+    let time = 30;
+    let gameInterval;
+    let moleTimer;
+    let holes = [];
+
+    function createBoard() {
+      board.innerHTML = '';
+      holes = [];
+
+      const holeSize = 60; // Fixed hole size (60px)
+      board.style.gridTemplateColumns = `repeat(5, ${holeSize}px)`; // 5 columns
+      board.style.gridTemplateRows = `repeat(6, ${holeSize}px)`; // 6 rows
+
+      for (let i = 0; i < 30; i++) { // 5 * 6 = 30 holes
+        const hole = document.createElement('div');
+        hole.classList.add('hole');
+        hole.style.width = `${holeSize}px`;
+        hole.style.height = `${holeSize}px`;
+
+        const mole = document.createElement('div');
+        mole.classList.add('mole');
+        mole.style.width = `${holeSize * 0.8}px`;
+        mole.style.height = `${holeSize * 0.8}px`;
+        mole.style.left = `${holeSize * 0.1}px`;
+
+        hole.appendChild(mole);
+        board.appendChild(hole);
+        holes.push(hole);
+
+        hole.addEventListener('click', () => {
+          if (hole.classList.contains('up')) {
+            score++;
+            scoreEl.textContent = score;
+            hitSound.currentTime = 0;
+            hitSound.play();
+            hole.classList.remove('up');
+          }
+        });
+      }
+    }
+
+    function randomHole() {
+      const index = Math.floor(Math.random() * holes.length);
+      return holes[index];
+    }
+
+    function showMole(duration) {
+      const hole = randomHole();
+      hole.classList.add('up');
+      setTimeout(() => {
+        hole.classList.remove('up');
+      }, duration);
+    }
+
+    function startGame() {
+      score = 0;
+      time = 30;
+      scoreEl.textContent = score;
+      timeEl.textContent = time;
+
+      const moleDuration = parseInt(levelSelect.value);
+
+      createBoard();
+
+      clearInterval(gameInterval);
+      clearInterval(moleTimer);
+
+      moleTimer = setInterval(() => showMole(moleDuration), 600);
+      gameInterval = setInterval(() => {
+        time--;
+        timeEl.textContent = time;
+        if (time <= 0) {
+          clearInterval(gameInterval);
+          clearInterval(moleTimer);
+          if (score > highScore) {
+            highScore = score;
+            highScoreEl.textContent = highScore;
+            alert(`Game Over!\nSkor kamu: ${score}\nNew High Score!`);
+          } else {
+            alert(`Game Over!\nSkor kamu: ${score}`);
+          }
+        }
+      }, 1000);
+    }
+
+    function resetGame() {
+      clearInterval(gameInterval);
+      clearInterval(moleTimer);
+      score = 0;
+      time = 30;
+      scoreEl.textContent = score;
+      timeEl.textContent = time;
+      board.innerHTML = '';
+    }
+
+    createBoard(); // default load
+  </script>
+</body>
+</html>
